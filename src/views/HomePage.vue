@@ -88,7 +88,7 @@ const handleSelect = (item) => {
         </el-icon> Nav -->
         <img src="../assets/logo-bro.png" alt="">
       </div>
-      <el-menu active-text-color="#ffd04b" background-color="#edf1f1" :default-active="$route.path" text-color="#000000"
+      <el-menu active-text-color="#0D6AFA" background-color="#F3F4F6" :default-active="$route.path" text-color="#4B5563"
         router>
         <el-menu-item index="/NavList">
           <span>导航总览</span>
@@ -173,7 +173,7 @@ const handleSelect = (item) => {
 
 .side {
   height: 100%;
-  background-color: #edf1f1;
+  background-color: #F3F4F6;
 }
 
 .logo {
