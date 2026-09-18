@@ -29,8 +29,8 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (res) => {
     // 成功时返回完整 axios 响应，业务代码通过 res.data 取数据
+    // if (res.data.code === 1) {return res}
     return res
-    // if (res.data.code === 1) {}
     // ElMessage.error(res.data.message||"服务异常")
     // return Promise.reject(res.data)
   },

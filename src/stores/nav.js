@@ -18,6 +18,6 @@ const navList = ref([])
     const res = await navGetCategoryService()
     navCategory.value = res.data
   }
-  const isAipanel =ref(false)
-  return { searchText, searchType, navList, navCategory,getnav,getCategory,isAipanel }
+
+  return { searchText, searchType, navList, navCategory,getnav,getCategory }
 })

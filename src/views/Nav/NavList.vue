@@ -6,6 +6,9 @@ import { navAddCategoryService, navDeleteCategoryService, navAddLinkService, nav
 import { useUserStore } from '@/stores/user'
 import { onMounted } from 'vue'
 import { debounce } from '@/utils/help'
+import { useAiStore } from '@/stores/ai'
+const aiStore = useAiStore()
+
 // import AiPanel from '@/components/AiPanel.vue'
 const userStore = useUserStore()
 const navStore = useNavStore()
@@ -14,6 +17,7 @@ onMounted(() => {
     userStore.getUser(),
     navStore.getnav(),
     navStore.getCategory(),
+    aiStore.isAipanel = false
   ])
 })
 const categorybox = ref(false)
@@ -113,7 +117,7 @@ const delLink = async (id) => {
   <div>
     <!-- 弹出框 -->
     <Teleport to="body">
-      <div class="AiPanel" v-if="navStore.isAipanel">
+      <div class="AiPanel" v-if="aiStore.isAipanel">
         <AiPanel></AiPanel>
       </div>
     </Teleport>
@@ -175,7 +179,7 @@ const delLink = async (id) => {
           <span>导航总览</span>
           <!-- 添加el-button -->
           <div class="operate">
-            <el-button type="primary" @click="navStore.isAipanel = true">AI推荐</el-button>
+            <el-button type="primary" @click="aiStore.isAipanel = true">AI推荐</el-button>
             <el-button type="primary" @click="categorybox = true">修改分类</el-button>
             <!-- 添加el-button -->
             <el-button type="primary" @click="linkbox = true">添加链接</el-button>

@@ -2,32 +2,32 @@
 import { ref } from 'vue'
 import { Promotion } from '@element-plus/icons-vue'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-import { useNavStore } from '@/stores/nav'
+import { useAiStore } from '@/stores/ai'
 import { ElMessage } from 'element-plus'
 import { nextTick } from 'vue'
 import { debounce } from '@/utils/help'
-const navStore = useNavStore()
+const aiStore = useAiStore()
 const closeAiPanel = () => {
-  navStore.isAipanel = false
+  aiStore.isAipanel = false
 }
-const count = ref(-1)
 
-const chatHistory = ref([
-  // {
-  // theprompt: ''
-  // thereply: ''
-  // }
-])
+
+// const chatview = ref([
+//   // {
+//   // theprompt: ''
+//   // thereply: ''
+//   // }
+// ])
 const aiInput = ref('')
 const chatArea = ref(null)
-// const loading = ref(true)   // 加载状态
 
-// 在 <script setup> 中添加这个函数
 const turnlink = (url) => {
   if (!url) return '';
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   return url.replace(urlRegex, '<a href="$1" target="_blank" style="color: #409EFF; text-decoration: underline;">$1</a>');
 };
+// 历史记录
+
 const handleAiSearch = debounce(async () => {
   if (!aiInput.value.trim()) {
     ElMessage.error('请输入你的需求')
@@ -35,11 +35,12 @@ const handleAiSearch = debounce(async () => {
   }
 
 
-  chatHistory.value.push({
+  aiStore.historyContent.push({
+    id: aiStore.count + 1,
     theprompt: aiInput.value,
     thereply: ''
   })
-  count.value++
+  aiStore.count++
   // loading.value = true
   const prompt = `
 你是一个导航站助手。用户会描述他需要的网站功能，你需要从大数据中，推荐最匹配的 3 个网站，且输出网站的链接网址，并解释为什么推荐。
@@ -68,7 +69,7 @@ const handleAiSearch = debounce(async () => {
         const data = JSON.parse(msg.data)
         const delta = data.choices[0].delta.content
         if (delta) {
-          chatHistory.value[count.value].thereply += delta
+          aiStore.historyContent[aiStore.count].thereply += delta
 
         }
 
@@ -85,23 +86,55 @@ const handleAiSearch = debounce(async () => {
   } catch {
     ElMessage.error('AI 请求失败')
   } finally {
+
     aiInput.value = ''
+
   }
 }, 500)
 
-
+// const historySearch = (prompt, reply) => {
+//   aiInput.value = prompt
+//   chatview.value.push({
+//     theprompt: prompt,
+//     thereply: reply
+//   })
+// }
+const scrollhistory = (id) => {
+  const item = document.querySelector(`[data-id="${id}"]`)
+  if (item) {
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+}
+// }
 </script>
 <template>
   <div class="ai-panel">
     <div class="title">
       智能导航
     </div>
+    <div class="history-popover">
+      <el-popover title="历史记录" placement="bottom">
+        <div class="history-content">
+          <div @click="scrollhistory(item.id)" class="history-item" v-for="(item, index) in aiStore.historyContent"
+            :key="index">
+            {{ item.theprompt }}
+
+          </div>
+        </div>
+
+        <template #reference>
+          <el-icon>
+            <Memo />
+          </el-icon>
+        </template>
+      </el-popover>
+    </div>
     <div class="close" @click="closeAiPanel"> <el-icon>
         <Close />
       </el-icon>
     </div>
     <div class="chat-area" ref="chatArea">
-      <div class="main" v-for="(item, index) in chatHistory" :key="index">
+      <div class="main" :data-id="item.id" v-for="(item) in aiStore.historyContent" :key="item.id">
         <div class="show-prompt">
           {{ item.theprompt }}
         </div>
@@ -121,7 +154,7 @@ const handleAiSearch = debounce(async () => {
 
 <style scoped>
 .ai-panel {
-
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -202,5 +235,34 @@ const handleAiSearch = debounce(async () => {
   font-size: 14px;
   line-height: 1.6;
   border: 1px solid #ebeef5;
+}
+
+/*历史记录*/
+.history-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+  /* 按需调整最大宽度 */
+  border-bottom: 1px solid #000000;
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+  cursor: pointer;
+}
+
+.history-item:hover {
+  background-color: #d2d5d8;
+}
+
+.history-content {
+  padding: 10px;
+  height: 100px;
+  overflow-y: auto;
+}
+
+.history-popover {
+  position: absolute;
+  top: 13px;
+  right: 40px;
 }
 </style>
