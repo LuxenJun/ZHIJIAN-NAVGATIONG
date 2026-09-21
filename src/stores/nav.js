@@ -1,23 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { navGetCategoryService, navGetListService } from '@/api/nav'
+import { navGetListService } from '@/api/nav'
+import { useUserStore } from '@/stores/user'
 
 export const useNavStore = defineStore('nav', () => {
   // 搜索相关
   const searchText = ref('')
-  const searchType = ref('百度')
+
+  const searchType = ref('https://www.baidu.com/s?wd=')
   // 导航总览相关
-  const navCategory = ref([])
-const navList = ref([])
+  const navList = ref([])
 
-  const getnav=async ()=>{
-      const res = await navGetListService()
-    navList.value = res.data
-  }
-  const getCategory=async ()=>{
-    const res = await navGetCategoryService()
-    navCategory.value = res.data
+  const getnav = async () => {
+    const userStore = useUserStore()
+
+    const res = await navGetListService(userStore.user.id)
+    navList.value = res ?? []
   }
 
-  return { searchText, searchType, navList, navCategory,getnav,getCategory }
+
+  return { searchText, searchType, navList, getnav }
 })

@@ -12,14 +12,86 @@ const aiStore = useAiStore()
 // import AiPanel from '@/components/AiPanel.vue'
 const userStore = useUserStore()
 const navStore = useNavStore()
-onMounted(() => {
-  Promise.all([
-    userStore.getUser(),
-    navStore.getnav(),
-    navStore.getCategory(),
-    aiStore.isAipanel = false
-  ])
+// 初始化导航数据
+// navAddCategoryService(userStore.user.id, '默认分类')
+onMounted(async () => {
+  aiStore.isAipanel = false
+
+  await userStore.getUser()
+  await navStore.getnav()
+
+  //  新用户初始化数据
+  if (!navStore.navList || navStore.navList.length === 0) {
+    await initDefaultNav()
+  }
+  // 更新信息
+  await navStore.getnav()
 })
+// 默认分类和链接
+const defaultCategories = [
+  {
+    name: '📚 常用工具',
+    navigations: [
+      { name: '哔哩哔哩', website: 'https://bilibili.com', description: '学习视频、教程' },
+      { name: '菜鸟教程', website: 'https://www.runoob.com/', description: '编程基础教程' }
+    ]
+  },
+  {
+    name: '🤖 AI工具',
+    navigations: [
+      { name: 'ChatGPT', website: 'https://chat.openai.com', description: 'OpenAI 对话AI' },
+      { name: 'Claude', website: 'https://claude.ai', description: 'Anthropic AI助手' }
+    ]
+  },
+  {
+    name: '💻 开发资源',
+    navigations: [
+      { name: 'GitHub', website: 'https://github.com', description: '代码托管、开源项目' },
+      { name: 'MDN Web文档', website: 'https://developer.mozilla.org/zh-CN/', description: 'Web标准文档' },
+      { name: 'Vue.js 官方', website: 'https://cn.vuejs.org/', description: 'Vue3 官方文档' },
+      { name: 'Element Plus', website: 'https://element-plus.org/zh-CN/', description: 'Vue3 UI组件库' },
+      { name: 'Vite', website: 'https://cn.vitejs.dev/', description: '下一代前端构建工具' },
+      { name: 'Pinia', website: 'https://pinia.vuejs.org/zh/', description: 'Vue3 状态管理' }
+    ]
+  },
+  {
+    name: '🎨 设计素材',
+    navigations: []
+  },
+  {
+    name: '📰 技术资讯',
+    navigations: [
+      { name: '掘金', website: 'https://juejin.cn/', description: '开发者交流社区' },
+      { name: 'InfoQ', website: 'https://www.infoq.cn/', description: '技术资讯、深度文章' }
+    ]
+  }
+]
+
+// 初始化默认导航数据
+const initDefaultNav = async () => {
+  for (const category of defaultCategories) {
+    // 添加分类
+    await navAddCategoryService(userStore.user.id, category.name)
+
+    // 重新拉取分类，拿到新分类的 id
+    await navStore.getnav()
+
+    // 找到刚才添加的分类
+    const newCategory = navStore.navList.find(c => c.name === category.name)
+    if (!newCategory) continue
+
+    // 往这个分类里添加链接
+    for (const link of category.navigations) {
+      await navAddLinkService(userStore.user.id, newCategory.id, link)
+    }
+  }
+}
+// onMounted(async () => {
+//   aiStore.isAipanel = false
+//   // 先确保用户信息已就绪（getnav 需要 userId），再拉取导航数据
+//   await userStore.getUser()
+//   await navStore.getnav()
+// })
 const categorybox = ref(false)
 const newcategory = ref('')
 const Delcategory = ref('')
@@ -34,16 +106,16 @@ const updatecategory = debounce(async () => {
   }
   // 传接口
   if (newcategory.value) {
-    await navAddCategoryService({ name: newcategory.value })
+    await navAddCategoryService(userStore.user.id, newcategory.value)
   }
 
   if (Delcategory.value) {
-    await navDeleteCategoryService(Delcategory.value)
+    await navDeleteCategoryService(userStore.user.id, Delcategory.value)
 
   }
   ElMessage.success('修改分类成功')
 
-  await navStore.getCategory()
+  await navStore.getnav()
 
   console.log(newcategory.value)
   categorybox.value = false
@@ -53,20 +125,20 @@ const updatecategory = debounce(async () => {
 const linkbox = ref(false)
 const linkForm = ref({
   name: '',
-  url: '',
+  website: '',
   description: '',
   categoryId: ''
 })
 const linkRules = ref({
   name: [{ required: true, message: '请输入链接名称', trigger: 'blur' }],
-  url: [{ required: true, message: '请输入链接URL', trigger: 'blur' }],
+  website: [{ required: true, message: '请输入链接URL', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }]
 })
 const linkFormRef = ref(null)
 const cancellink = () => {
   linkForm.value = {
     name: '',
-    url: '',
+    website: '',
     description: '',
     categoryId: ''
   }
@@ -76,7 +148,7 @@ const addlink = debounce(async () => {
   linkFormRef.value.validate(async (valid) => {
     if (valid) {
       // 传接口
-      await navAddLinkService(linkForm.value)
+      await navAddLinkService(userStore.user.id, linkForm.value.categoryId, linkForm.value)
       ElMessage.success('添加链接成功')
       await navStore.getnav()
 
@@ -84,7 +156,7 @@ const addlink = debounce(async () => {
       linkbox.value = false
       linkForm.value = {
         name: '',
-        url: '',
+        website: '',
         description: '',
         categoryId: ''
       }
@@ -95,7 +167,7 @@ const addlink = debounce(async () => {
 }, 500)
 // 跳转链接
 const handleClick = (linkItem) => {
-  window.open(linkItem.url, '_blank')
+  window.open(linkItem.website, '_blank')
 }
 
 // 删除导航
@@ -106,7 +178,7 @@ const delLink = async (id) => {
     type: 'warning'
   })
 
-  await navDeleteLinkService(id)
+  await navDeleteLinkService(userStore.user.id, id)
   ElMessage.success('删除链接成功')
   await navStore.getnav()
 }
@@ -129,7 +201,7 @@ const delLink = async (id) => {
       </el-form-item>
       <el-form-item label="删除分类" prop="id">
         <el-select v-model="Delcategory" placeholder="请选择删除分类" style="width: 100%">
-          <el-option v-for="item in navStore.navCategory" :key="item.id" :label="item.name" :value="item.id" />
+          <el-option v-for="item in navStore.navList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
 
@@ -153,12 +225,12 @@ const delLink = async (id) => {
         <el-form-item label="链接描述" prop="description">
           <el-input v-model="linkForm.description" placeholder="请输入链接描述" />
         </el-form-item>
-        <el-form-item label="链接URL" prop="url">
-          <el-input v-model="linkForm.url" placeholder="请输入链接URL" />
+        <el-form-item label="链接URL" prop="website">
+          <el-input v-model="linkForm.website" placeholder="请输入链接URL" />
         </el-form-item>
         <el-form-item label="分类" prop="categoryId">
           <el-select v-model="linkForm.categoryId" placeholder="请选择分类" style="width: 100%">
-            <el-option v-for="item in navStore.navCategory" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option v-for="item in navStore.navList" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -186,11 +258,10 @@ const delLink = async (id) => {
           </div>
         </div>
       </template>
-      <div v-for="item in navStore.navCategory" :key="item.id">
+      <div v-for="item in navStore.navList" :key="item.id">
         <h3>{{ item.name }}</h3>
         <div class="link-container">
-          <div @click="handleClick(linkItem)"
-            v-for="linkItem in navStore.navList.filter(link => link.categoryId == item.id)" :key="linkItem.id">
+          <div @click="handleClick(linkItem)" v-for="linkItem in item.navigations" :key="linkItem.id">
             <div class="link-item">
               <div class="name"> {{ linkItem.name }}</div>
               <div class="description"> {{ linkItem.description }}</div>
@@ -244,6 +315,14 @@ const delLink = async (id) => {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 8px 25px rgba(64, 158, 255, 0.25);
 }
+
+h3 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 
 .name {
   padding: 5px 5px;

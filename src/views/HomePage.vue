@@ -38,7 +38,7 @@ const handleCommand = async (key) => {
   }
 }
 // 搜索框功能
-const restaurants = computed(() => navStore.navList)
+const restaurants = computed(() => (navStore.navList ?? []).flatMap(category => category.navigations ?? []))
 // const isEmpty = computed(() => restaurants.value.length === 0)
 // const isEmpty = ref(true)
 
@@ -70,10 +70,10 @@ const createFilter = (queryString) => {
 }
 const handleSelect = (item) => {
   navStore.searchText = ''
-  if (!item.url) return
+  if (!item.website) return
 
 
-  window.open(item.url, '_blank')
+  window.open(item.website, '_blank')
 }
 
 </script>

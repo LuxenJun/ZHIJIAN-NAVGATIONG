@@ -5,11 +5,7 @@ export const useAiStore = defineStore('ai-store', () => {
   const isAipanel = ref(false)
   const count = ref(-1)
   const historyContent = ref([
-    // {
-    //   id: 1,
-    //   theprompt: 提示词
-    //   thereply: 回复
-    // }
+
   ])
 
   return { historyContent,isAipanel,count }

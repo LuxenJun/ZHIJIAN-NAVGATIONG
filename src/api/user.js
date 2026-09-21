@@ -1,18 +1,22 @@
 import request from '@/utils/request'
 
-// 注册接口：POST /users 会在 db.json 里创建一条用户记录
+// 注册接口：POST
 export const userRegisterService = ({
   username,
   password,
-}) => request.post('/users', { username, password})
+}) => request.post('/user/register', { username, password})
 
-// 登陆接口：json-server 没有登录路由，
-// 用条件查询模拟 —— 查到匹配的用户名+密码就算登录成功
+// 登陆接口：
+
 export const userLoginService = ({ username, password }) =>
-  request.get('/users', { params: { username, password } })
+  request.post('/user/login', { username, password })
 
 // 获取用户信息
-export const userGetInfoService = () => request.get('/users')
+export const userGetInfoService = () => request.post('/users/register')
 
-// 修改用户信息
-export const userUpdateInfoService = (id, data) => request.patch(`/users/${id}`, data)
+// // 修改用户信息
+
+export const userUpdateInfoService = (data) => request.post(`/user/information`, data)
+
+// 修改用户密码接口
+export const userUpdatePasswordService = (data) => request.post(`/user/password`, data)

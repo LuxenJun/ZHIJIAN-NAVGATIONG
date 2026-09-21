@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { userUpdateInfoService } from '@/api/user'
+import { userUpdatePasswordService } from '@/api/user'
 import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
@@ -29,8 +29,10 @@ const rules = ref({
 const formRef = ref(null)
 const submitForm = async () => {
   await formRef.value.validate()
-  await userUpdateInfoService(userStore.user.id, {
-    password: form.value.newPassword
+  await userUpdatePasswordService({
+    id: userStore.user.id,
+    oldPassword: form.value.oldPassword,
+    newPassword: form.value.newPassword
   })
   form.value = {
     oldPassword: '',

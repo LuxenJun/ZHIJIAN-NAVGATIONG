@@ -31,8 +31,8 @@ const rules = reactive({
       trigger: 'blur',
     },
     {
-      pattern: /^[A-Za-z0-9]{1,10}$/,
-      message: '用户名为1-10位大小写字母和数字',
+      pattern: /^[A-Za-z0-9\u4e00-\u9fa5]{1,10}$/,
+      message: '用户名为1-10位大小写字母和数字中文字符',
       trigger: 'blur',
     },
   ],
@@ -71,34 +71,54 @@ const rules = reactive({
 // 表单校验，数据提交并赋值，建立token，提示用户，跳转页面
 const isloading = ref(false)
 const register = async () => {
-
-  await form.value.validate()
+  try {
+    await form.value.validate()
+  } catch {
+    return // 校验不通过，表单下方已有错误提示
+  }
   isloading.value = true
-  await userRegisterService(ruleForm.value)
-  ElMessage.success('注册成功')
-  isloading.value = false
-  isRegister.value = false
+  try {
+    await userRegisterService({
+      username: ruleForm.value.username,
+      password: ruleForm.value.password,
+    })
+    ElMessage.success('注册成功')
+    isRegister.value = false
+  } finally {
+    isloading.value = false
+  }
 }
 const submitForm = async () => {
-  await form.value.validate()
+  try {
+    await form.value.validate()
+  } catch {
+    return // 校验不通过，表单下方已有错误提示
+  }
   isloading.value = true
-  // 返回的是匹配到的用户数组，查到即登录成功
-  //接口逻辑-----------------------------------------------------------------------------------------token
-  const res = await userLoginService(ruleForm.value)
-  if (res.length === 0) {
-    ElMessage.error('用户名或密码错误')
-    return
-  }
-  isloading.value = false
+  try {
+    // 拦截器已解包，res 直接就是后端的 User 对象 { id, username, nickname, avatar }
+    const res = await userLoginService({
+      username: ruleForm.value.username,
+      password: ruleForm.value.password,
+    })
+    if (!res || !res.id) {
+      ElMessage.error('用户名或密码错误')
+      return
+    }
 
-  if (store.isRemember) {
-    localStorage.setItem('remember_username', ruleForm.value.username)
-  } else {
-    localStorage.removeItem('remember_username')
+    if (store.isRemember) {
+      localStorage.setItem('remember_username', ruleForm.value.username)
+    } else {
+      localStorage.removeItem('remember_username')
+    }
+
+    store.setToken(res.id)
+    store.setUser(res)
+    ElMessage.success('登录成功')
+    router.push('/NavList')
+  } finally {
+    isloading.value = false
   }
-  store.setToken(1)
-  ElMessage.success('登录成功,欢迎回来')
-  router.push('/NavList')
 }
 
 watch(isRegister, () => {
